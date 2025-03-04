@@ -68,7 +68,7 @@ export default function QRSearch() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
   useEffect(() => {
-    const userRole = localStorage.getItem("role"); // Adjust 'role' if your key is different
+    const userRole = localStorage.getItem("role");
     setRoles(userRole ?? "");
   }, []);
 
