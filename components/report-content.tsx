@@ -42,6 +42,13 @@ type ReportData = {
 
 type DateRangeType = "custom" | "fy" | "thisMonth" | "previousMonth";
 
+const formatDate = (date: Date) => {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0"); 
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export function ReportContent() {
   const [reportType, setReportType] = useState<"product" | "qr">("product");
   const [selectedProduct, setSelectedProduct] = useState<ProductName | "all">(
@@ -240,8 +247,8 @@ export function ReportContent() {
             <div className="space-y-2">
               <Label>Selected Date Range</Label>
               <div className="text-sm text-muted-foreground">
-                From: {dateRange.from.toLocaleDateString()} - To:{" "}
-                {dateRange.to.toLocaleDateString()}
+                From: {formatDate(dateRange.from)} - To:{" "}
+                {formatDate(dateRange.to)}
               </div>
             </div>
           )}

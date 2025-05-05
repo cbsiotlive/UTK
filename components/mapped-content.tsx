@@ -53,11 +53,19 @@ export function MappedContent() {
   const [selectedQRSheet, setSelectedQRSheet] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedOrigin, setSelectedOrigin] = useState("");
-  const [qrSheets, setQrSheets] = useState<
-    { id: number; headerText: string }[]
-  >([]);
+  const [qrSheets, setQrSheets] = useState<{ id: number; headerText: string }[]>([]);
   const [error, setError] = useState("");
   const [mappedQRs, setMappedQRs] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredQrSheets, setFilteredQrSheets] = useState(qrSheets);
+
+  useEffect(() => {
+    setFilteredQrSheets(
+      qrSheets.filter((sheet) =>
+        sheet.headerText.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [searchTerm, qrSheets]);
 
   useEffect(() => {
     const userRole = localStorage.getItem("role");
@@ -194,7 +202,15 @@ export function MappedContent() {
                   <SelectValue placeholder="Select QR Sheet number" />
                 </SelectTrigger>
                 <SelectContent>
-                  {qrSheets.map((sheet) => (
+                  <div className="relative">
+                    <Input
+                      placeholder="Search QR sheets..."
+                      className="mb-2 sticky top-0"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  {filteredQrSheets.map((sheet) => (
                     <SelectItem key={sheet.id} value={String(sheet.id)}>
                       {sheet.headerText}
                     </SelectItem>
