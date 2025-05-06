@@ -1,9 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from 'react';
-import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { changeUserPassword } from "../service/ProfileService";
+import { toast } from "react-toastify";
 
 type Profile = {
   name: string;
@@ -27,20 +28,20 @@ type Profile = {
 
 export function ProfileContent() {
   const [profile, setProfile] = useState<Profile>({
-    name: '',
-    email: '',
-    role: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    role: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
     // Ensure localStorage is accessed only on the client side
-    if (typeof window !== 'undefined') {
-      const localEmail = localStorage.getItem('email') || '';
-      const localName = localStorage.getItem('userName') || '';
-      const localRole = localStorage.getItem('role') || '';
+    if (typeof window !== "undefined") {
+      const localEmail = localStorage.getItem("email") || "";
+      const localName = localStorage.getItem("userName") || "";
+      const localRole = localStorage.getItem("role") || "";
 
       setProfile({
         ...profile,
@@ -50,7 +51,6 @@ export function ProfileContent() {
       });
     }
   }, []);
-
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,35 +62,25 @@ export function ProfileContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (profile.newPassword !== profile.confirmPassword) {
-      setError("New password and confirm password do not match");
+      toast.error("New password and confirm password do not match");
       return;
     }
-
-    
-    const localId = localStorage.getItem("id") || "";
-    
-    const requestBody = {
-      old_password: profile.currentPassword,
-      new_password: profile.newPassword,
-      new_password_confirmation: profile.confirmPassword,
-    };
-
-    const token = localStorage.getItem("token"); // Retrieve the token from local storage
-
-    try {
-      const response = await axios.post(
-        `https://verify.utkarshsmart.in/api/user/${localId}/change-password`,
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Password changed successfully:", response.data);
+  
+    const userId = localStorage.getItem("id") || "";
+    const token = localStorage.getItem("token") || "";
+  
+    const success = await changeUserPassword({
+      userId,
+      oldPassword: profile.currentPassword,
+      newPassword: profile.newPassword,
+      confirmPassword: profile.confirmPassword,
+      token,
+    });
+  
+    if (success) {
+      toast.success("Password changed successfully. Please log in again.");
       setIsChangingPassword(false);
       setProfile((prev) => ({
         ...prev,
@@ -98,17 +88,13 @@ export function ProfileContent() {
         newPassword: "",
         confirmPassword: "",
       }));
-      setError(null);
-
       localStorage.clear();
       router.push("/login");
-
-      alert("Password changed successfully. Please log in again.");
-    } catch (error) {
-      console.error("Failed to change password:", error);
-      setError("Failed to change password");
+    } else {
+      toast.error("Failed to change password");
     }
   };
+  
 
   const handleChangePasswordClick = () => {
     setIsChangingPassword(true);

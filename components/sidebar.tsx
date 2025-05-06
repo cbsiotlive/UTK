@@ -1,6 +1,6 @@
 "use client";
 
-import {Home, QrCode, Package, FileText, Menu,LogOut, User, Settings, Users,Shield, X, CheckSquare} from "lucide-react";
+import {Home, QrCode, Package, FileText, Menu,LogOut, User, Settings, Users,Shield, X, CheckSquare, Unlink2} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -16,6 +16,7 @@ const navItems = [
   { name: "Dashboard", icon: Home, href: "/dashboard" },
   { name: "QR", icon: QrCode, href: "/dashboard/qr" },
   { name: "Mapped", icon: CheckSquare, href: "/dashboard/mapped" },
+  { name: "Unmapped", icon: Unlink2, href: "/dashboard/unmapped" },
   { name: "Products", icon: Package, href: "/dashboard/products" },
   { name: "Report", icon: FileText, href: "/dashboard/report" },
   { name: "Admins", icon: Shield, href: "/dashboard/admins" }, 

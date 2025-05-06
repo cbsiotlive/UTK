@@ -1,8 +1,11 @@
-"use client"
+"use client";
 
-import Dashboard from "@/components/dashboard"
+import Dashboard from "@/components/dashboard";
 
 export default function ReportPage() {
-  return <Dashboard />
+  return (
+    <Dashboard>
+      <div></div>
+    </Dashboard>
+  );
 }
-

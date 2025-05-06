@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -27,14 +26,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Pencil, Eye, EyeOff } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { fetchAdmins, updateAdmin } from "../service/AdminsService";
+import { toast } from "react-toastify";
+
 
 type Admin = {
   id: number;
@@ -49,26 +44,14 @@ export function AdminsContent() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
-  const [showPasswords, setShowPasswords] = useState<{
-    [key: number]: boolean;
-  }>({});
 
   useEffect(() => {
-    const fetchAdmins = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get("https://verify.utkarshsmart.in/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const filteredAdmins = response.data.users.filter((user: Admin) => user.role !== "user");
-        setAdmins(filteredAdmins);
-        console.log("Fetched Admins:", filteredAdmins);
-      } catch (error) {
-        console.error("Failed to fetch admins:", error);
-      }
+    const loadAdmins = async () => {
+      const data = await fetchAdmins();
+      setAdmins(data);
     };
 
-    fetchAdmins();
+    loadAdmins();
   }, []);
 
   const handleEditAdmin = (admin: Admin) => {
@@ -78,41 +61,41 @@ export function AdminsContent() {
 
   const handleSaveAdmin = async () => {
     if (!editingAdmin) return;
-
-    const token = localStorage.getItem("token");
+  
+    if (!editingAdmin.password || editingAdmin.password.trim() === "") {
+      toast.warn("Please enter a new password to update.");
+      return;
+    }
+  
     const adminId = editingAdmin.id;
-
+  
     const updateData = {
       email: editingAdmin.email,
       user_name: editingAdmin.name,
       password: editingAdmin.password,
     };
-
+  
     try {
-      const response = await axios.put(
-        `https://verify.utkarshsmart.in/api/user/${adminId}`,
-        updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Update response:", response.data);
-
-      setAdmins((prev) =>
-        prev.map((admin) =>
-          admin.id === adminId ? { ...admin, ...response.data } : admin
-        )
-      );
-
-      setIsModalOpen(false);
-      setEditingAdmin(null);
+      const updated = await updateAdmin(adminId, updateData);
+  
+      if (updated) {
+        setAdmins((prev) =>
+          prev.map((admin) =>
+            admin.id === adminId ? { ...admin, ...updated } : admin
+          )
+        );
+        toast.success("Password updated successfully.");
+        setIsModalOpen(false);
+        setEditingAdmin(null);
+      } else {
+        toast.error("Failed to update password.");
+      }
     } catch (error) {
-      console.error("Failed to update admin:", error);
+      console.error("Update failed:", error);
+      toast.error("An error occurred while updating the password.");
     }
   };
+  
 
   return (
     <Card>

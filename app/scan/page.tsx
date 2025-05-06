@@ -2,6 +2,10 @@
 import Dashboard from "@/components/dashboard"
 
 export default function ScanPage() {
-  return <Dashboard />
+  return (
+    <Dashboard>
+      <div></div>
+    </Dashboard>
+  )
 }
 

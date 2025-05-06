@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { searchProducts } from "../service/QrService";
+import { toast } from "react-toastify";
 
 type SearchFilters = {
   productName: ProductName | "all";
@@ -73,7 +74,9 @@ export default function QRSearch() {
   }, []);
 
   const handleSearch = async () => {
-    const token = localStorage.getItem("token"); 
+    // Check if we're on the client side
+    if (typeof window === "undefined") return;
+
     const requestBody = {
       product_name:
         searchFilters.productName === "all"
@@ -95,33 +98,12 @@ export default function QRSearch() {
     };
 
     try {
-      const response = await axios.post(
-        "https://verify.utkarshsmart.in/api/product/filter",
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data: SearchResult[] = response.data.products.data.map(
-        (item: any) => ({
-          id: item.id, 
-          productName: item.product_name,
-          batchNumber: item.batch_no,
-          serialNo: item.serial_no,
-          mappingStatus: item.mapping_status,
-          origin: item.origin,
-          date: item.date,
-        })
-      );
-
+      const data = await searchProducts(requestBody);
       setSearchResults(data);
-
-      console.log("Response data:", data);
+      toast.success("Search successful!");
     } catch (error) {
       console.error("Error fetching data:", error);
+      toast.error("Failed to fetch results.");
     }
   };
 
@@ -343,14 +325,16 @@ export default function QRSearch() {
               </TableHeader>
               <TableBody>
                 {searchResults.map((result) => (
-                  <TableRow key={result.id}>
+                  <TableRow key={result.serialNo}>
                     <TableCell>{result.productName}</TableCell>
                     <TableCell>{result.batchNumber}</TableCell>
                     <TableCell>{result.serialNo}</TableCell>
                     <TableCell>{result.mappingStatus}</TableCell>
                     <TableCell>{result.origin}</TableCell>
                     <TableCell>
-                    {result.date ? format(parseISO(result.date), 'MM/dd/yyyy') : 'N/A'}
+                      {result.date
+                        ? format(parseISO(result.date), "MM/dd/yyyy")
+                        : "N/A"}
                     </TableCell>{" "}
                     {/* Format date if necessary */}
                   </TableRow>

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchProducts } from "../service/ProductsService";
 
 export default function ProductsTable() {
   interface Product {
@@ -24,25 +25,12 @@ export default function ProductsTable() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(
-          "https://verify.utkarshsmart.in/api/product",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setProducts(response.data.products);
-        console.log("Fetched products:", response.data.products);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      }
+    const loadProducts = async () => {
+      const products = await fetchProducts();
+      setProducts(products);
     };
 
-    fetchProducts();
+    loadProducts();
   }, []);
 
   return (

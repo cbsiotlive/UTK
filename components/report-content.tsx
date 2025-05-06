@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { useState } from "react";
@@ -32,19 +31,14 @@ import {
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { PRODUCT_NAMES, type ProductName } from "@/lib/constants";
 import { startOfMonth, endOfMonth, subMonths } from "date-fns";
-
-type ReportData = {
-  id: number;
-  product_name: ProductName;
-  quantity: number;
-  date: string;
-};
+import { fetchReportData, ReportData } from "../service/ReportService";
+import { toast } from "react-toastify";
 
 type DateRangeType = "custom" | "fy" | "thisMonth" | "previousMonth";
 
 const formatDate = (date: Date) => {
   const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0"); 
+  const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `${day}/${month}/${year}`;
 };
@@ -104,70 +98,66 @@ export function ReportContent() {
   };
 
   const generateReport = async () => {
-    const token = localStorage.getItem("token");
-    const requestBody = {
-      product_name: selectedProduct,
-      start_date: dateRange?.from?.toISOString().split("T")[0] ?? "",
-      end_date: dateRange?.to?.toISOString().split("T")[0] ?? "",
-    };
-
     try {
-      const response = await axios.post(
-        "https://verify.utkarshsmart.in/api/product/report",
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const reportData = response.data.report;
-      console.log("Report Data:", reportData);
-      setReportData(reportData);
-
-      console.log(`Report Type: ${reportType}`);
-      console.log(`Product: ${selectedProduct}`);
-      console.log(`Date Range Type: ${dateRangeType}`);
-      console.log(
-        `Date Range: ${
-          dateRange
-            ? `${dateRange.from.toLocaleDateString()} to ${dateRange.to.toLocaleDateString()}`
-            : "Not set"
-        }`
-      );
+      const requestBody = {
+        product_name: selectedProduct,
+        start_date: dateRange?.from?.toISOString().split("T")[0] ?? "",
+        end_date: dateRange?.to?.toISOString().split("T")[0] ?? "",
+      };
+  
+      const data = await fetchReportData(requestBody);
+  
+      if (!data || data.length === 0) {
+        toast.warn("No data found for the selected filters.");
+      } else {
+        toast.success("Report generated successfully.");
+      }
+  
+      setReportData(data);
     } catch (error) {
-      console.error("Error fetching report data:", error);
+      console.error("Failed to generate report:", error);
+      toast.error("Failed to generate report. Please try again.");
     }
   };
+  
 
   const exportToExcel = () => {
-    console.log("Exporting to Excel:", reportData);
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(reportData);
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    const fileName = `${selectedProduct}_report_${
-      new Date().toISOString().split("T")[0]
-    }.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    alert("Export initiated: " + fileName);
+    try {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(reportData);
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      const fileName = `${selectedProduct}_report_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success("Excel file exported successfully!");
+    } catch (error) {
+      console.error("Excel export failed:", error);
+      toast.error("Failed to export Excel file.");
+    }
   };
+  
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Report Data", 14, 16);
-    const tableColumn = ["Date", "Product Name", "Quantity"];
-    const tableRows: (string | number)[][] = [];
-    reportData.forEach((item) => {
-      const reportRow = [item.date, item.product_name, item.quantity];
-      tableRows.push(reportRow);
-    });
-
-    autoTable(doc, { head: [tableColumn], body: tableRows, startY: 30 });
-    doc.save("report.pdf");
-    console.log("Exporting to PDF:", reportData);
-    alert("PDF has been created and downloaded.");
+    try {
+      const doc = new jsPDF();
+      doc.text("Report Data", 14, 16);
+      const tableColumn = ["Date", "Product Name", "Quantity"];
+      const tableRows: (string | number)[][] = [];
+      reportData.forEach((item) => {
+        const reportRow = [item.date, item.product_name, item.quantity];
+        tableRows.push(reportRow);
+      });
+  
+      autoTable(doc, { head: [tableColumn], body: tableRows, startY: 30 });
+      doc.save("report.pdf");
+      toast.success("PDF file downloaded successfully!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Failed to export PDF file.");
+    }
   };
+  
 
   return (
     <div className="space-y-6">

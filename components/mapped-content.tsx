@@ -22,38 +22,30 @@ import {
 } from "@/components/ui/table";
 import { CheckCircle2, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  fetchQrSheets,
+  submitBulkMappedQRCodes,
+} from "../service/MappedQrService";
+import { toast} from "react-toastify";
 
-// Mock data for Printed QR Sheet Unique Numbers
-const qrSheetNumbers = [
-  { id: "1", label: "MBCB" },
-  { id: "3", label: "POLE" },
-  { id: "2", label: "HM" },
-];
 
 const originList = [
   { id: "67c5e370-0084-8000-bcc8-d04db4cf0ff2", label: "GRP" },
   { id: "67c556c9-b228-8000-9865-160b98dacce8", label: "JNP" },
 ];
 
-// Function to generate mock mapped QR codes based on the selected product
-const generateMockMappedQRs = (product: string, count = 5) => {
-  const productName = product.split("-")[0];
-  const currentDate = new Date().toISOString().split("T")[0];
-  return Array.from({ length: count }, (_, i) => ({
-    serialNo: `${productName}-${String(i + 1).padStart(3, "0")}`,
-    productName,
-    mappedDate: currentDate,
-    timestamp: new Date().toTimeString().split(" ")[0],
-  }));
-};
-
 export function MappedContent() {
   const [roles, setRoles] = useState("");
   const [batchNumber, setBatchNumber] = useState("");
+  const [totalScan, setTotalScan] = useState("");
+  const [grade, setGrade] = useState("");
+  const [asp, setAsp] = useState("");
   const [selectedQRSheet, setSelectedQRSheet] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedOrigin, setSelectedOrigin] = useState("");
-  const [qrSheets, setQrSheets] = useState<{ id: number; headerText: string }[]>([]);
+  const [qrSheets, setQrSheets] = useState<
+    { id: number; headerText: string; remainingRows: number }[]
+  >([]);
   const [error, setError] = useState("");
   const [mappedQRs, setMappedQRs] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,39 +61,26 @@ export function MappedContent() {
 
   useEffect(() => {
     const userRole = localStorage.getItem("role");
-    console.log("User Role:", userRole);
     setRoles(userRole ?? "");
 
-    const fetchQrSheets = async () => {
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          "https://verify.utkarshsmart.in/api/header-options",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch QR sheet data");
-        }
-
-        const data = await response.json();
-        setQrSheets(data.data); // Store fetched data
+        const data = await fetchQrSheets();
+        setQrSheets(data);
+        // toast.success("QR codes successfully mapped for batch");
       } catch (error) {
         console.error("Error fetching QR sheet data:", error);
+        toast.error("Error fetching QR sheet data");
       }
     };
 
-    fetchQrSheets();
+    fetchData();
   }, []);
 
   const handleSelection = (value: string) => {
     setSelectedQRSheet(value);
     const selectedItem = qrSheets.find((item) => String(item.id) === value);
-    console.log("Selected ID:", selectedItem?.id); // Log selected ID
+    console.log("Selected ID:", selectedItem?.id);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -127,43 +106,31 @@ export function MappedContent() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
+      const data = {
+        batch_no: batchNumber,
+        header_id: selectedQRSheet,
+        origin: selectedOrigin || null,
+        total_scan: totalScan,
+        grade: grade,
+        asp: asp,
+      };
 
-      const response = await fetch(
-        "https://verify.utkarshsmart.in/api/product/bulk-mapped",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            batch_no: batchNumber,
-            header_id: selectedQRSheet,
-            origin: selectedOrigin || null,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to submit QR mapping");
-      }
-
-      const data = await response.json();
+      const response = await submitBulkMappedQRCodes(data);
 
       // Check if response is an empty array
-      if (!data || !data.length) {
+      if (!response || !response.length) {
         setError("No data found");
-        setMappedQRs([]); // Ensure mappedQRs is empty
+        setMappedQRs([]);
         setIsSubmitted(false);
         return;
       }
 
-      // Ensure data is properly set
-      setMappedQRs(data);
+      setMappedQRs(response);
       setIsSubmitted(true);
+      toast.success(`QR codes successfully mapped for batch ${batchNumber}`);
     } catch (error) {
       console.error("Error submitting QR mapping:", error);
+      toast.error("Failed to map QR codes. Please try again.");
       setError("Failed to map QR codes. Please try again.");
     }
   };
@@ -212,7 +179,13 @@ export function MappedContent() {
                   </div>
                   {filteredQrSheets.map((sheet) => (
                     <SelectItem key={sheet.id} value={String(sheet.id)}>
-                      {sheet.headerText}
+                      <span className="flex gap-[20px]">
+                        <span>{sheet.headerText}</span>
+                        <span className="text-red-400 hover:text-grey-400">
+                          (Left-{sheet.remainingRows})
+                        </span>
+                      </span>
+                      
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -239,6 +212,36 @@ export function MappedContent() {
                 </Select>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="totalScan">Total Scan</Label>
+              <Input
+                id="totalScan"
+                placeholder="Enter total scan"
+                value={totalScan}
+                onChange={(e) => setTotalScan(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="grade">Grade</Label>
+              <Input
+                id="grade"
+                placeholder="Enter grade"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="asp">Asp</Label>
+              <Input
+                id="asp"
+                placeholder="Enter asp"
+                value={asp}
+                onChange={(e) => setAsp(e.target.value)}
+              />
+            </div>
           </div>
 
           {error && (

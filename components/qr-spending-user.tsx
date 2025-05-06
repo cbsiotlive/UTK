@@ -2,56 +2,46 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { fetchQRSpendingData } from "../service/UserDashboardService";
 
-const COLORS = ["#48C774", "#FF6B6B"]; // Green for Mapped, Red for Unmapped
+const COLORS = ["#48C774", "#FF6B6B"];
 
 export default function QRSpendingUser() {
-  const [chartData, setChartData] = useState<{ name: string; value: number }[]>([]);
+  const [chartData, setChartData] = useState<{ name: string; value: number }[]>(
+    []
+  );
 
   useEffect(() => {
-    const fetchMappedData = async () => {
-      const origin = localStorage.getItem("origin") || "JNP";
-      const token = localStorage.getItem("token");
+    const origin = localStorage.getItem("origin") || "JNP";
 
+    const loadData = async () => {
       try {
-        const response = await axios.post(
-          "https://verify.utkarshsmart.in/api/product/mapped",
-          { origin },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-
-        // Assuming the API returns the total and mapped quantity correctly
-        const { mapped_quantity, total, mapped_percentage } = response.data.mapped;
-        const unmapped_percentage = 100 - mapped_percentage;
-
-        const data = [
-          { name: "MapQR", value: total }
-        ];
-
+        const data = await fetchQRSpendingData(origin);
         setChartData(data);
       } catch (error) {
-        console.error("Error fetching mapped data:", error);
+        console.log(error);
       }
     };
 
-    fetchMappedData();
+    loadData();
   }, []);
 
   return (
     <Card className="h-full">
       <CardHeader className="p-4 pb-0">
-        <CardTitle className="text-lg font-medium text-primary">QR Spending ({localStorage.getItem("origin") || "JNP"})</CardTitle>
+        <CardTitle className="text-lg font-medium text-primary">
+          QR Spending ({localStorage.getItem("origin") || "JNP"})
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-4 flex items-center justify-between h-[calc(100%-60px)]">
         <div className="flex flex-col justify-center space-y-6 w-1/4">
           {chartData.map((entry, index) => (
             <div key={`info-${index}`} className="flex flex-col">
               <div className="flex items-center space-x-2 mb-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index] }} />
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: COLORS[index] }}
+                />
                 <span className="text-sm font-medium">{entry.name}</span>
               </div>
               <span className="text-xl font-bold pl-5">{entry.value}</span>
