@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import axios from "axios";
+import { loginUser } from "../service/AuthService"; 
+
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -21,29 +22,22 @@ export default function LoginPage() {
     setError(""); // Clear previous errors
 
     try {
-      const response = await axios.post(
-        "https://verify.utkarshsmart.in/api/login",
-        {
-          user_name: username,
-          password: password,
-        }
-      );
-
-      if (response.data.isLogin) {
-        if (response.data.role === "user") {
+      const data = await loginUser(username, password);
+    
+      if (data.isLogin) {
+        if (data.role === "user") {
           setError("You are not authorized to use this dashboard.");
-          return; // Stop further execution
+          return;
         }
-
-        // Only proceed for allowed roles
+    
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("email", response.data.email);
-        localStorage.setItem("userName", response.data.userName);
-        localStorage.setItem("role", response.data.role);
-        localStorage.setItem("origin", response.data.origin);
-        localStorage.setItem("id", response.data.id);
-
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("email", data.email);
+        localStorage.setItem("userName", data.userName);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("origin", data.origin);
+        localStorage.setItem("id", data.id);
+    
         router.push("/dashboard");
       } else {
         setError("Invalid username or password");
@@ -51,6 +45,7 @@ export default function LoginPage() {
     } catch (error) {
       setError("Invalid credentials");
     }
+    
   };
 
   return (
@@ -61,7 +56,7 @@ export default function LoginPage() {
           <div>
             <h2 className="text-header font-bold text-gray-900">Welcome to</h2>
             <h2 className="text-header font-bold bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text mt-2">
-              Utkarsh AuthentiProduct
+              Utkarsh AuthenticProduct
             </h2>
             <p className="mt-2 text-body text-muted-foreground">
               Please sign in to your account to continue
