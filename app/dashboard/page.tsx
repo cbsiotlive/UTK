@@ -13,13 +13,20 @@ import QRSpendingUser from "@/components/qr-spending-user";
 
 export default function DashboardPage() {
   const [role, setRole] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const storedRole = localStorage.getItem("role");
     setRole(storedRole || "");
   }, []);
 
   const isAdmin = role === "admin";
+
+  if (!isMounted) {
+    // Return a loading state or null during SSR
+    return null;
+  }
 
   return (
     <Dashboard>

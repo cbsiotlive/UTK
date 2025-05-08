@@ -2,8 +2,6 @@ import axios from "axios";
 import { API_BASE_URL } from "../lib/api";
 import { getAuthHeaders } from "../lib/auth";
 
-const origin = localStorage.getItem("origin") || "null";
-const isOrigin = localStorage.getItem("origin") || "JNP";
 
 export interface GraphResponse {
   [key: string]: number;
@@ -27,6 +25,7 @@ export async function fetchGraphData(timeFrame: string) {
 
 //fetch Total Product Data
 export async function fetchTotalProductData() {
+  const origin = localStorage.getItem("origin") || "null";
   try {
     const response = await axios.post(
       `${API_BASE_URL}/api/product/total`,
@@ -48,6 +47,7 @@ export async function fetchTotalProductData() {
 
 //fetch Quarterly Data
 export async function fetchQuarterlyData() {
+  const isOrigin = localStorage.getItem("origin") || "JNP";
   try {
     const response = await axios.post(
       `${API_BASE_URL}/api/product/quarter`,

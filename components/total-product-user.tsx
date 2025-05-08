@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -16,7 +15,7 @@ export default function TotalProductUser() {
   const [chartData, setChartData] = useState<{ name: string; value: number }[]>(
     []
   );
-  const [origin, setOrigin] = useState(
+  const [origin] = useState(
     localStorage.getItem("origin") || "Default"
   );
 
