@@ -58,6 +58,7 @@ export const fetchQRSpendingData = async (origin: string) => {
   }
 };
 
+//fetch Quarterly Product Data
 export const fetchQuarterlyProductData = async (
   origin: string
 ): Promise<FactoryData[]> => {
