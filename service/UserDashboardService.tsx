@@ -32,6 +32,7 @@ export const fetchTotalProductData = async (origin: string) => {
   }
 };
 
+//fetch QR Spending Data
 export const fetchQRSpendingData = async (origin: string) => {
   const token = localStorage.getItem("token");
 
